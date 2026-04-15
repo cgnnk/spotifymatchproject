@@ -7,6 +7,7 @@ const path = require('path');
 
 const app = express();
 
+// --- AYARLAR ---
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
 const client_secret = '1f55450ee0d24cbf93e137de52f6bfb8';
 const redirect_uri = 'https://spotifymatchproject.onrender.com/callback';
@@ -16,7 +17,7 @@ app.use(express.static(__dirname)).use(cors()).use(cookieParser());
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.get('/login', (req, res) => {
-    // Tüm izinler (scope) eksiksiz eklendi
+    // 403 hatasını önlemek için tüm izinler eklendi
     const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state playlist-read-private';
     res.redirect('https://accounts.spotify.com/authorize?' +
         querystring.stringify({
@@ -46,4 +47,4 @@ app.get('/callback', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8888;
-app.listen(PORT, () => console.log(`🚀 Sunucu port ${PORT} üzerinde aktif.`));
+app.listen(PORT, () => console.log(`🚀 Sunucu aktif.`));
