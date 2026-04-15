@@ -11,23 +11,25 @@
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .spotify-green { color: #1DB954; }
         .active-dot { width: 14px; height: 14px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 3px solid #080808; z-index: 10; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-card { animation: fade-in 0.5s ease forwards; }
     </style>
 </head>
 <body>
     <div class="max-w-6xl mx-auto p-6 pb-32">
-        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900 text-center md:text-left">
-            <h1 class="text-3xl font-black italic tracking-tighter spotify-green mx-auto md:mx-0">DLRCGN.HUB</h1>
+        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
+            <h1 class="text-3xl font-black italic tracking-tighter spotify-green">DLRCGN.HUB</h1>
         </header>
 
         <div id="main-content" class="space-y-16">
             <section>
-                <h3 class="text-xl font-bold mb-6 opacity-50 uppercase tracking-widest italic text-center md:text-left">Çevrimiçi Dinleyiciler</h3>
+                <h3 class="text-xl font-bold mb-8 opacity-50 uppercase tracking-widest italic">Çevrimiçi Dinleyiciler</h3>
                 <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     </div>
             </section>
 
             <section class="space-y-10">
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter text-center md:text-left">
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter">
                     <span class="spotify-green text-4xl mr-2">/</span> Çalma Listelerin
                 </h3>
                 <div id="playlist-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -37,7 +39,7 @@
     </div>
 
     <script>
-        // --- FIREBASE KONFİGÜRASYONU ---
+        // --- FIREBASE AYARLARI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeGgTl_FUeP7Hg5y5uEb3rPYGXU1SIcdA",
             authDomain: "spotifymatchproject.firebaseapp.com",
@@ -50,54 +52,50 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // URL'den Token Çekme
+        // Token Kontrolü
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const token = params.get('access_token');
         let currentUserId = "";
 
         if (token) {
-            // 1. Profil Bilgilerini Al ve Firebase'e Kaydet
+            // 1. Profil Bilgilerini Çek ve Firebase'i Başlat
             fetch('https://api.spotify.com/v1/me', { 
                 headers: { 'Authorization': `Bearer ${token}` } 
             })
             .then(res => res.json())
             .then(user => {
                 currentUserId = user.id;
+                console.log("Bağlanan Kullanıcı:", user.display_name);
                 
-                db.ref('presence/' + user.id).set({
+                db.ref('presence/' + user.id).update({
                     name: user.display_name,
                     img: user.images && user.images[0] ? user.images[0].url : "https://via.placeholder.com/150",
                     online: true,
                     last_seen: Date.now(),
-                    status: "Bağlandı ✅"
+                    status: "Bağlı ✅"
                 });
-            })
-            .catch(err => console.error("Profil hatası:", err));
+            });
 
-            // 2. Canlı Şarkı Takibi (Her 3 Saniyede Bir)
+            // 2. Canlı Şarkı Takibi (3 Saniyede bir)
             setInterval(() => {
                 fetch('https://api.spotify.com/v1/me/player/currently-playing', { 
                     headers: { 'Authorization': `Bearer ${token}` } 
                 })
-                .then(res => {
-                    if (res.status === 204) return null; // Şarkı çalmıyor
-                    return res.json();
-                })
+                .then(res => res.status === 204 ? null : res.json())
                 .then(data => {
-                    const statusText = (data && data.item) ? `Dinliyor: ${data.item.name} - ${data.item.artists[0].name}` : "Şu an sessiz...";
                     const isPlaying = (data && data.is_playing) ? true : false;
+                    const statusText = (data && data.item) ? `Dinliyor: ${data.item.name} - ${data.item.artists[0].name}` : "Şu an bir şey çalmıyor.";
 
                     db.ref('presence/' + currentUserId).update({
                         status: statusText,
                         playing: isPlaying,
                         last_seen: Date.now()
                     });
-                })
-                .catch(err => console.log("Çalma bilgisi güncellenemedi."));
+                }).catch(e => console.log("Canlı veri hatası."));
             }, 3000);
 
-            // 3. Kartları Ekrana Bas (Real-time)
+            // 3. Kartları Ekranda Listele (Real-time)
             db.ref('presence').on('value', (snapshot) => {
                 const users = snapshot.val();
                 const container = document.getElementById('user-cards');
@@ -106,26 +104,28 @@
                 if (users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        // Sadece son 5 dakika içinde aktif olanları göster
+                        // Sadece son 5 dakika içinde sinyal gönderenleri göster
                         if (u.online && (Date.now() - u.last_seen < 300000)) {
                             container.innerHTML += `
-                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 transition-all">
-                                    <div class="w-20 h-20 rounded-full bg-cover bg-center relative shadow-2xl border border-white/10" style="background-image: url('${u.img}')">
+                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 animate-card shadow-2xl">
+                                    <div class="w-20 h-20 rounded-full bg-cover bg-center relative border border-white/10" style="background-image: url('${u.img}')">
                                         ${u.playing ? '<div class="active-dot"></div>' : ''}
                                     </div>
                                     <div class="flex-1 overflow-hidden">
-                                        <h4 class="font-black text-xl italic uppercase truncate">${u.name}</h4>
-                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-400'} truncate italic">
+                                        <h4 class="font-black text-xl italic uppercase truncate tracking-tight text-white">${u.name}</h4>
+                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-500'} truncate italic mt-1">
                                             ${u.status}
                                         </p>
                                     </div>
                                 </div>`;
                         }
                     });
+                } else {
+                    container.innerHTML = `<div class="text-gray-700 italic">Kimse çevrimiçi değil...</div>`;
                 }
             });
 
-            // 4. Çalma Listelerini Çek
+            // 4. Çalma Listelerini Listele
             fetch('https://api.spotify.com/v1/me/playlists?limit=10', { 
                 headers: { 'Authorization': `Bearer ${token}` } 
             })
@@ -137,9 +137,9 @@
                     data.items.forEach(pl => {
                         const img = pl.images && pl.images[0] ? pl.images[0].url : 'https://via.placeholder.com/300';
                         plist.innerHTML += `
-                            <div class="glass p-3 rounded-[30px] group cursor-pointer hover:bg-white/5 transition" onclick="window.open('${pl.external_urls.spotify}', '_blank')">
+                            <div class="glass p-3 rounded-[30px] group cursor-pointer hover:bg-white/5 transition duration-500" onclick="window.open('${pl.external_urls.spotify}', '_blank')">
                                 <img src="${img}" class="w-full aspect-square rounded-[22px] mb-3 object-cover group-hover:scale-95 transition shadow-lg">
-                                <p class="text-[10px] font-black uppercase text-center truncate px-2">${pl.name}</p>
+                                <p class="text-[10px] font-black uppercase text-center truncate px-2 text-gray-300 group-hover:text-green-500">${pl.name}</p>
                             </div>`;
                     });
                 }
