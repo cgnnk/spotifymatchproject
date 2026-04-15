@@ -18,23 +18,23 @@
     <div class="max-w-6xl mx-auto p-6 pb-32">
         <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
             <h1 class="text-3xl font-black italic tracking-tighter spotify-green">SpotifyOnline</h1>
-            <div id="auth-info" class="text-[10px] text-gray-600 font-bold uppercase tracking-widest hidden">Oturum Açıldı</div>
+            <div id="auth-info" class="text-[10px] text-gray-600 font-bold uppercase tracking-widest hidden">Logged</div>
         </header>
 
         <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
-            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Connect With<span class="spotify-green">Spotify Account</span></h2>
+            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Connect With <span class="spotify-green">Spotify Account</span></h2>
             <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg text-lg uppercase">Login With Spotify</a>
         </div>
 
         <div id="main-content" class="hidden space-y-16">
             <section>
-                <h3 class="text-sm font-bold mb-6 opacity-40 uppercase tracking-[0.3em] italic">Aktif Dinleyiciler</h3>
+                <h3 class="text-sm font-bold mb-6 opacity-40 uppercase tracking-[0.3em] italic">Active Members</h3>
                 <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
             </section>
 
             <section class="space-y-10">
                 <h3 class="text-3xl font-black italic uppercase tracking-tighter">
-                    <span class="spotify-green text-4xl mr-2">/</span> Kitaplığın
+                    <span class="spotify-green text-4xl mr-2">/</span> Library
                 </h3>
                 <div id="playlist-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </section>
