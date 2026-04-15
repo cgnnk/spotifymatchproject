@@ -1,35 +1,68 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify</title>
+    <title>DLRCGN | Music Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     <style>
-        body {
-            background: radial-gradient(circle at top right, #1db95422, #000);
-        }
+        body { background: #0b0b0b; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .spotify-green { color: #1DB954; }
     </style>
 </head>
-<body class="bg-black text-white min-h-screen">
-    <div class="container mx-auto px-6 py-12">
-        <header class="flex justify-between items-center mb-16 border-b border-gray-800 pb-6">
-            <h1 class="text-4xl font-black italic tracking-tighter text-green-500"></h1>
-            <div id="status" class="text-xs uppercase tracking-widest text-gray-500 font-bold">Bağlantı Yok</div>
+<body>
+    <div class="max-w-6xl mx-auto p-6">
+        <header class="flex justify-between items-center py-8 border-b border-gray-800 mb-10">
+            <h1 class="text-3xl font-black italic tracking-tighter spotify-green">DLRCGN.HUB</h1>
+            <div id="auth-status" class="text-sm opacity-50 font-mono tracking-widest">DISCONNECTED</div>
         </header>
 
-        <div id="login-screen" class="flex flex-col items-center justify-center py-20">
-            <h2 class="text-3xl font-bold mb-8 text-center"></h2>
-            <a href="/login" class="bg-green-500 hover:bg-green-400 text-black font-black py-4 px-10 rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(29,185,84,0.4)]">
-                SPOTIFY İLE BAĞLAN
-            </a>
+        <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
+            <h2 class="text-5xl font-bold mb-6">Müziği Paylaşın. <br>Canlı İzleyin.</h2>
+            <p class="text-gray-400 mb-10 max-w-md">Kız arkadaşınla ortak zevklerini gör ve şu an ne dinlediğini anlık takip et.</p>
+            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg shadow-green-500/20">SPOTIFY İLE BAĞLAN</a>
         </div>
 
-        <div id="main-content" class="hidden">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold italic underline decoration-green-500">En Çok Dinlenenler</h2>
-            </div>
-            <div id="track-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+        <div id="main-content" class="hidden space-y-12">
+            
+            <section>
+                <h3 class="text-xl font-bold mb-6 opacity-80">Şu An Ne Dinliyorlar? 🔥</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass p-6 rounded-3xl flex items-center space-x-4 border-l-4 border-green-500">
+                        <div id="my-avatar" class="w-16 h-16 rounded-full bg-gray-800 bg-cover shadow-xl"></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-lg">Çağan Kuzu</h4>
+                            <p id="my-status" class="text-xs text-gray-400">Yükleniyor...</p>
+                        </div>
+                        <div id="my-pulse" class="hidden w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+                    </div>
+                    <div class="glass p-6 rounded-3xl flex items-center space-x-4">
+                        <div id="dilara-avatar" class="w-16 h-16 rounded-full bg-gray-800 bg-cover shadow-xl"></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-lg">Dilara</h4>
+                            <p id="dilara-status" class="text-xs text-gray-400">Henüz bağlanmadı...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div class="lg:col-span-2 space-y-6">
+                    <h3 class="text-xl font-bold opacity-80 italic">Favori Şarkıların</h3>
+                    <div id="track-list" class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center text-sm"></div>
+                </div>
+                <div class="glass p-8 rounded-3xl h-fit sticky top-6">
+                    <h3 class="text-center font-bold mb-6 text-green-500">CANLI OYNATICI</h3>
+                    <div id="player-ui" class="text-center">
+                        <img id="current-art" src="https://via.placeholder.com/300" class="rounded-2xl mb-4 shadow-2xl mx-auto">
+                        <div id="current-name" class="font-bold truncate">Şarkı Seçilmedi</div>
+                        <div id="current-artist" class="text-gray-500 text-sm mb-6">...</div>
+                        <button onclick="togglePlay()" class="bg-white text-black p-4 rounded-full hover:scale-110 transition shadow-xl">
+                            <svg id="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -42,31 +75,66 @@
         if (token) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
-            document.getElementById('status').innerText = "Oturum Açıldı";
-            document.getElementById('status').classList.replace('text-gray-500', 'text-green-500');
+            document.getElementById('auth-status').innerText = "ONLINE";
+            document.getElementById('auth-status').classList.add('spotify-green');
 
-            fetch('https://api.spotify.com/v1/me/top/tracks?limit=10', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(res => res.json())
-            .then(data => {
+            // 1. Profil Bilgilerini Çek
+            fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json()).then(user => {
+                if(user.images[0]) document.getElementById('my-avatar').style.backgroundImage = `url(${user.images[0].url})`;
+            });
+
+            // 2. Favorileri Listele
+            fetch('https://api.spotify.com/v1/me/top/tracks?limit=9', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json()).then(data => {
                 const list = document.getElementById('track-list');
                 data.items.forEach(track => {
-                    const card = `
-                        <div class="group relative bg-gray-900/50 p-4 rounded-2xl hover:bg-gray-800 transition-all border border-gray-800 hover:border-green-500/50 cursor-pointer"
-                             onclick="window.open('${track.external_urls.spotify}', '_blank')">
-                            <img src="${track.album.images[0].url}" class="rounded-xl shadow-lg mb-4 group-hover:rotate-2 transition-transform">
-                            <h3 class="font-bold text-sm truncate">${track.name}</h3>
-                            <p class="text-xs text-gray-400 truncate">${track.artists[0].name}</p>
-                            <div class="absolute bottom-4 right-4 bg-green-500 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
-                            </div>
-                        </div>
-                    `;
-                    list.innerHTML += card;
+                    list.innerHTML += `
+                        <div class="glass p-3 rounded-2xl hover:border-green-500 transition cursor-pointer" onclick="playSong('${track.uri}')">
+                            <img src="${track.album.images[0].url}" class="rounded-xl mb-2">
+                            <p class="truncate font-bold">${track.name}</p>
+                        </div>`;
                 });
-            })
-            .catch(err => console.error("Hata:", err));
+            });
+
+            // 3. Canlı Dinleme Takibi (Her 5 saniyede bir)
+            setInterval(() => {
+                fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(res => res.json()).then(data => {
+                    if (data && data.item) {
+                        document.getElementById('my-status').innerText = `Şu an: ${data.item.name}`;
+                        document.getElementById('my-pulse').classList.remove('hidden');
+                        document.getElementById('current-art').src = data.item.album.images[0].url;
+                        document.getElementById('current-name').innerText = data.item.name;
+                        document.getElementById('current-artist').innerText = data.item.artists[0].name;
+                    } else {
+                        document.getElementById('my-status').innerText = "Sessiz...";
+                        document.getElementById('my-pulse').classList.add('hidden');
+                    }
+                }).catch(() => {});
+            }, 5000);
+        }
+
+        // --- Player Kontrolleri ---
+        function playSong(uri) {
+            fetch('https://api.spotify.com/v1/me/player/play', {
+                method: 'PUT',
+                body: JSON.stringify({ uris: [uri] }),
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        }
+
+        function togglePlay() {
+            // Basit durdur/devat et fonksiyonu
+            fetch('https://api.spotify.com/v1/me/player/pause', {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).catch(() => {
+                fetch('https://api.spotify.com/v1/me/player/play', {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            });
         }
     </script>
 </body>
