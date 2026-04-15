@@ -10,7 +10,7 @@ const app = express();
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
 const client_secret = '1f55450ee0d24cbf93e137de52f6bfb8';
 // RENDER'A GEÇTİĞİNDE BURAYI RENDER LİNKİNLE DEĞİŞTİRMEYİ UNUTMA
-const redirect_uri = 'http://127.0.0.1:8888/callback';
+const redirect_uri = 'https://spotifymatchproject.onrender.com';
 
 app.use(cors()).use(cookieParser());
 
