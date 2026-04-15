@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Spotify</title>
+    <title>DLRCGN | Music Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,59 +11,63 @@
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .spotify-green { color: #1DB954; }
         input::placeholder { color: #4b5563; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="max-w-6xl mx-auto p-6 pb-32">
         <header class="flex justify-between items-center py-8 border-b border-gray-800 mb-10">
             <h1 class="text-3xl font-black italic tracking-tighter spotify-green">DLRCGN.HUB</h1>
-            <div id="auth-status" class="text-xs uppercase tracking-widest text-gray-500 font-bold">DISCONNECTED</div>
+            <div id="auth-status" class="text-xs uppercase tracking-widest text-gray-500 font-bold">GİRİŞ YAPILMADI</div>
         </header>
 
-        <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
-            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg">GİRİŞ YAP VE BAŞLA</a>
+        <div id="login-screen" class="flex flex-col items-center justify-center py-32 text-center">
+            <h2 class="text-5xl font-bold mb-8">Müziğinizi Birleştirin.</h2>
+            <p class="text-gray-400 mb-10 max-w-md text-lg">Bağlanın, çalma listelerinizi görün ve Dilara ile ortak zevklerinizi keşfedin.</p>
+            <a href="/login" class="bg-[#1DB954] text-black font-black py-5 px-16 rounded-full hover:scale-105 transition shadow-lg shadow-green-500/20 text-xl">SPOTIFY İLE BAĞLAN</a>
         </div>
 
-        <div id="main-content" class="hidden space-y-12">
+        <div id="main-content" class="hidden space-y-16">
+            
             <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass p-6 rounded-3xl flex items-center space-x-4 border-l-4 border-green-500">
-                    <div id="my-avatar" class="w-16 h-16 rounded-full bg-gray-800 bg-cover"></div>
+                <div class="glass p-6 rounded-3xl flex items-center space-x-4 border-l-4 border-green-500 transition-all">
+                    <div id="my-avatar" class="w-20 h-20 rounded-full bg-gray-800 bg-cover shadow-2xl border-2 border-gray-700"></div>
                     <div class="flex-1">
-                        <h4 class="font-bold text-lg">Çağan</h4>
-                        <p id="my-status" class="text-xs text-gray-400 italic">Sessiz...</p>
+                        <h4 class="font-bold text-xl uppercase tracking-tight">Çağan Kuzu</h4>
+                        <p id="my-status" class="text-xs text-green-500 font-mono mt-1 italic italic">Spotify Bağlandı ✅</p>
                     </div>
                 </div>
-                <div id="dilara-card" class="glass p-6 rounded-3xl flex items-center space-x-4 border-l-4 border-gray-700">
-                    <div id="dilara-avatar" class="w-16 h-16 rounded-full bg-gray-800 bg-cover"></div>
+                <div id="dilara-card" class="glass p-6 rounded-3xl flex items-center space-x-4 border-l-4 border-gray-800 transition-all">
+                    <div id="dilara-avatar" class="w-20 h-20 rounded-full bg-gray-800 bg-cover shadow-2xl"></div>
                     <div class="flex-1">
-                        <h4 class="font-bold text-lg">Dilara</h4>
-                        <p id="dilara-status" class="text-xs text-gray-400 italic">Henüz bağlanmadı...</p>
+                        <h4 class="font-bold text-xl uppercase tracking-tight text-gray-400">Dilara</h4>
+                        <p id="dilara-status" class="text-xs text-gray-500 italic">Henüz giriş yapmadı...</p>
                     </div>
                 </div>
             </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="relative">
-                        <input type="text" id="search-input" placeholder="Şarkı ara ve çal..." 
-                               class="w-full bg-gray-900 border border-gray-800 rounded-full py-4 px-6 focus:outline-none focus:border-green-500 transition">
-                        <div id="search-results" class="absolute w-full mt-2 glass rounded-2xl z-50 overflow-hidden hidden"></div>
+            <div class="space-y-8">
+                <div class="relative max-w-2xl mx-auto">
+                    <input type="text" id="search-input" placeholder="Bir şarkı ara..." 
+                           class="w-full bg-gray-900 border border-gray-800 rounded-full py-5 px-8 focus:outline-none focus:border-green-500 transition-all text-lg shadow-2xl">
+                    <div id="search-results" class="absolute w-full mt-3 glass rounded-3xl z-50 overflow-hidden hidden shadow-2xl"></div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6 opacity-80 flex items-center">
+                            <span class="mr-2 italic">En Çok Dinlediğin Şarkılar</span>
+                            <span class="h-px flex-1 bg-gray-800 ml-4"></span>
+                        </h3>
+                        <div id="track-list" class="grid grid-cols-2 gap-4"></div>
                     </div>
                     
-                    <h3 class="text-xl font-bold opacity-80">Senin Favorilerin</h3>
-                    <div id="track-list" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
-                </div>
-
-                <div class="glass p-6 rounded-3xl h-fit sticky top-6 text-center">
-                    <img id="current-art" src="https://via.placeholder.com/300" class="rounded-2xl mb-4 shadow-2xl mx-auto">
-                    <div id="current-name" class="font-bold truncate">...</div>
-                    <div id="current-artist" class="text-gray-500 text-sm mb-6 italic">...</div>
-                    <div class="flex justify-center space-x-6 items-center">
-                        <button onclick="controlPlayer('previous')" class="text-gray-400 hover:text-white"><svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.52-.302 1.233.043 1.233.696v7.384c0 .653-.713.998-1.233.696L5 8.752V12a.5.5 0 0 1-1 0V4z"/></svg></button>
-                        <button id="toggle-btn" onclick="togglePlayback()" class="bg-white text-black p-4 rounded-full hover:scale-110 transition shadow-xl">
-                            <svg id="play-svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
-                        </button>
-                        <button onclick="controlPlayer('next')" class="text-gray-400 hover:text-white"><svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.713 3.31 4 3.655 4 4.308v7.384c0 .653.713.998 1.233.696L11.5 8.752V12a.5.5 0 0 0 1 0V4z"/></svg></button>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-6 opacity-80 flex items-center">
+                            <span class="mr-2 italic">Çalma Listelerin</span>
+                            <span class="h-px flex-1 bg-gray-800 ml-4"></span>
+                        </h3>
+                        <div id="playlist-list" class="grid grid-cols-2 gap-4"></div>
                     </div>
                 </div>
             </div>
@@ -87,57 +91,73 @@ const firebaseConfig = {
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const token = params.get('access_token');
-        let isPlaying = false;
         let myId = "";
 
         if (token) {
+            // Spotify Alanlarını Göster
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
-            
-            // 1. Kendi Bilgilerini Çek
+            document.getElementById('auth-status').innerText = "BAĞLANDI";
+            document.getElementById('auth-status').classList.replace('text-gray-500', 'text-green-500');
+
+            // 1. Profil Bilgilerini Çek ve Firebase'e Kaydet
             fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json()).then(user => {
-                myId = user.id === "DİLARA_SPOTIFY_ID_BURAYA" ? "dilara" : "cagan";
+                myId = user.id === "DİLARA_ID_BURAYA" ? "dilara" : "cagan";
                 if(user.images[0]) document.getElementById('my-avatar').style.backgroundImage = `url(${user.images[0].url})`;
+                
+                db.ref('users/' + myId).update({
+                    name: user.display_name,
+                    profile_pic: user.images[0] ? user.images[0].url : "",
+                    online: true
+                });
             });
 
-            // 2. Canlı Takip & Veritabanı Yazma
-            setInterval(() => {
-                fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
-                .then(res => res.json()).then(data => {
-                    const status = data.item ? `Dinliyor: ${data.item.name}` : "Sessiz...";
-                    document.getElementById('my-status').innerText = status;
-                    
-                    // Firebase'e yaz
-                    db.ref('users/' + myId).set({
-                        status: status,
-                        art: data.item ? data.item.album.images[0].url : "",
-                        last_updated: Date.now()
-                    });
-
-                    // UI Güncelle
-                    if(data.item) {
-                        document.getElementById('current-art').src = data.item.album.images[0].url;
-                        document.getElementById('current-name').innerText = data.item.name;
-                        document.getElementById('current-artist').innerText = data.item.artists[0].name;
-                        isPlaying = data.is_playing;
-                        updatePlayerIcon(isPlaying);
-                    }
+            // 2. Favori Şarkıları Çek
+            fetch('https://api.spotify.com/v1/me/top/tracks?limit=9', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json()).then(data => {
+                const list = document.getElementById('track-list');
+                data.items.slice(0, 6).forEach(track => {
+                    list.innerHTML += `
+                        <div class="glass p-4 rounded-2xl flex items-center space-x-3 hover:bg-white/10 transition cursor-pointer" onclick="window.open('${track.external_urls.spotify}', '_blank')">
+                            <img src="${track.album.images[2].url}" class="w-12 h-12 rounded-lg shadow-lg">
+                            <div class="overflow-hidden">
+                                <p class="truncate font-bold text-sm">${track.name}</p>
+                                <p class="text-xs text-gray-500 truncate">${track.artists[0].name}</p>
+                            </div>
+                        </div>`;
                 });
-            }, 3000);
+            });
 
-            // 3. Dilara'yı Takip Et (Realtime)
+            // 3. Çalma Listelerini Çek (Yeni!)
+            fetch('https://api.spotify.com/v1/me/top/tracks3', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(res => res.json()).then(data => {
+                const plist = document.getElementById('playlist-list');
+                data.items.slice(0, 6).forEach(pl => {
+                    plist.innerHTML += `
+                        <div class="glass p-4 rounded-2xl flex items-center space-x-3 hover:bg-green-500/10 transition cursor-pointer border border-transparent hover:border-green-500/50" onclick="window.open('${pl.external_urls.spotify}', '_blank')">
+                            <img src="${pl.images[0] ? pl.images[0].url : 'https://via.placeholder.com/150'}" class="w-12 h-12 rounded-lg shadow-lg">
+                            <div class="overflow-hidden">
+                                <p class="truncate font-bold text-sm">${pl.name}</p>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-tighter">${pl.tracks.total} Şarkı</p>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            // 4. Dilara'yı Takip Et
             const otherId = myId === "cagan" ? "dilara" : "cagan";
             db.ref('users/' + otherId).on('value', (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
-                    document.getElementById('dilara-status').innerText = data.status;
-                    document.getElementById('dilara-avatar').style.backgroundImage = `url(${data.art})`;
-                    document.getElementById('dilara-card').classList.add('border-green-500');
+                if (data && data.online) {
+                    document.getElementById('dilara-status').innerText = "Çevrimiçi";
+                    document.getElementById('dilara-status').classList.replace('text-gray-500', 'text-green-500');
+                    if(data.profile_pic) document.getElementById('dilara-avatar').style.backgroundImage = `url(${data.profile_pic})`;
+                    document.getElementById('dilara-card').classList.replace('border-gray-800', 'border-green-500');
                 }
             });
 
-            // 4. Şarkı Arama
+            // 5. Şarkı Arama Fonksiyonu
             document.getElementById('search-input').addEventListener('input', (e) => {
                 const q = e.target.value;
                 if(q.length < 3) return;
@@ -149,48 +169,16 @@ const firebaseConfig = {
                     resDiv.classList.remove('hidden');
                     data.tracks.items.forEach(t => {
                         resDiv.innerHTML += `
-                            <div class="flex items-center p-3 hover:bg-white/10 cursor-pointer" onclick="playSong('${t.uri}')">
-                                <img src="${t.album.images[2].url}" class="w-10 h-10 rounded mr-3">
-                                <div><div class="font-bold text-sm">${t.name}</div><div class="text-xs text-gray-400">${t.artists[0].name}</div></div>
+                            <div class="flex items-center p-4 hover:bg-white/10 cursor-pointer border-b border-gray-800/50" onclick="window.open('${t.external_urls.spotify}', '_blank')">
+                                <img src="${t.album.images[2].url}" class="w-12 h-12 rounded-lg mr-4 shadow-lg">
+                                <div>
+                                    <div class="font-bold text-white">${t.name}</div>
+                                    <div class="text-sm text-gray-500">${t.artists[0].name}</div>
+                                </div>
                             </div>`;
                     });
                 });
             });
-        }
-
-        // --- PLAYER FONKSİYONLARI ---
-        function playSong(uri) {
-            fetch('https://api.spotify.com/v1/me/player/play', {
-                method: 'PUT',
-                body: JSON.stringify({ uris: [uri] }),
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            document.getElementById('search-results').classList.add('hidden');
-        }
-
-        function togglePlayback() {
-            const endpoint = isPlaying ? 'pause' : 'play';
-            fetch(`http://googleusercontent.com/spotify.com/${endpoint}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).then(() => {
-                isPlaying = !isPlaying;
-                updatePlayerIcon(isPlaying);
-            });
-        }
-
-        function controlPlayer(action) {
-            fetch(`http://googleusercontent.com/spotify.com/${action}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-        }
-
-        function updatePlayerIcon(playing) {
-            const btn = document.getElementById('play-svg');
-            btn.innerHTML = playing ? 
-                `<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5 6.25a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5zm3.5 0a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5z"/>` :
-                `<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/>`;
         }
     </script>
 </body>
