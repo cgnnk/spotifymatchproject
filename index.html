@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1db95422, #000);
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+    <div class="container mx-auto px-6 py-12">
+        <header class="flex justify-between items-center mb-16 border-b border-gray-800 pb-6">
+            <h1 class="text-4xl font-black italic tracking-tighter text-green-500"></h1>
+            <div id="status" class="text-xs uppercase tracking-widest text-gray-500 font-bold">Bağlantı Yok</div>
+        </header>
+
+        <div id="login-screen" class="flex flex-col items-center justify-center py-20">
+            <h2 class="text-3xl font-bold mb-8 text-center"></h2>
+            <a href="/login" class="bg-green-500 hover:bg-green-400 text-black font-black py-4 px-10 rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(29,185,84,0.4)]">
+                SPOTIFY İLE BAĞLAN
+            </a>
+        </div>
+
+        <div id="main-content" class="hidden">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold italic underline decoration-green-500">En Çok Dinlenenler</h2>
+            </div>
+            <div id="track-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const token = params.get('access_token');
+
+        if (token) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('status').innerText = "Oturum Açıldı";
+            document.getElementById('status').classList.replace('text-gray-500', 'text-green-500');
+
+            fetch('https://api.spotify.com/v1/me/top/tracks?limit=10', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('track-list');
+                data.items.forEach(track => {
+                    const card = `
+                        <div class="group relative bg-gray-900/50 p-4 rounded-2xl hover:bg-gray-800 transition-all border border-gray-800 hover:border-green-500/50 cursor-pointer"
+                             onclick="window.open('${track.external_urls.spotify}', '_blank')">
+                            <img src="${track.album.images[0].url}" class="rounded-xl shadow-lg mb-4 group-hover:rotate-2 transition-transform">
+                            <h3 class="font-bold text-sm truncate">${track.name}</h3>
+                            <p class="text-xs text-gray-400 truncate">${track.artists[0].name}</p>
+                            <div class="absolute bottom-4 right-4 bg-green-500 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+                            </div>
+                        </div>
+                    `;
+                    list.innerHTML += card;
+                });
+            })
+            .catch(err => console.error("Hata:", err));
+        }
+    </script>
+</body>
+</html>
