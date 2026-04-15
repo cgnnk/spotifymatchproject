@@ -126,10 +126,8 @@
 
                                         ${u.playing ? `
                                             <div class="space-y-4">
-                                                <div class="flex items-center overflow-hidden truncate">
-                                                    <span class="text-gray-400 text-sm italic font-medium whitespace-nowrap">${u.artist_name}</span>
-                                                    <span class="text-white mx-2 opacity-50">-</span>
-                                                    <span class="text-[#1DB954] text-lg font-black uppercase truncate">${u.song_name}</span>
+                                                <div class="overflow-hidden truncate">
+                                                    <span class="text-[#1DB954] text-lg font-black uppercase whitespace-nowrap">${u.artist_name} - ${u.song_name}</span>
                                                 </div>
                                                 
                                                 <div class="w-full space-y-2">
