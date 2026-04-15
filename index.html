@@ -10,18 +10,25 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background: #080808; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .spotify-card { background: #121212; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .spotify-card { background: #121212; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; cursor: pointer; }
         .spotify-card:hover { background: #181818; border-color: rgba(255, 255, 255, 0.15); }
         .progress-bar { height: 100%; background: #1DB954; transition: width 1s linear; }
+        .match-glow { box-shadow: 0 0 20px rgba(29, 185, 84, 0.2); border-color: rgba(29, 185, 84, 0.4); }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div class="max-w-6xl mx-auto p-6 pb-32">
-        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
+        <header class="flex justify-between items-center py-8 mb-4 border-b border-gray-900">
             <h1 class="text-3xl font-black italic tracking-tighter text-[#1DB954]">SpotifyOnline</h1>
             <div id="auth-info" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest hidden">Logged</div>
         </header>
+
+        <div id="stats-bar" class="hidden flex space-x-4 mb-8 text-[10px] font-bold uppercase tracking-widest opacity-60">
+            <div id="total-online">0 ONLİNE</div>
+            <div class="text-gray-700">|</div>
+            <div id="total-playing" class="text-[#1DB954]">0 LİSTENİNG</div>
+        </div>
 
         <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
             <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Connect Wıth <span class="text-[#1DB954]">Spotıfy</span></h2>
@@ -63,6 +70,7 @@
         if (token) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('stats-bar').classList.remove('hidden');
             document.getElementById('auth-info').classList.remove('hidden');
             startApp(token);
         }
@@ -95,6 +103,7 @@
                             album_img: track.album.images[0]?.url,
                             duration_ms: track.duration_ms,
                             progress_ms: data.progress_ms,
+                            track_id: track.id, // Spotify Linki için
                             last_seen: Date.now()
                         });
                     } else {
@@ -108,49 +117,63 @@
                 const container = document.getElementById('user-cards');
                 container.innerHTML = "";
                 
-                if(users) {
-                    Object.keys(users).forEach(uid => {
-                        const u = users[uid];
-                        if(Date.now() - u.last_seen < 300000) {
-                            const progress = u.playing ? (u.progress_ms / u.duration_ms * 100).toFixed(1) : 0;
-                            const timeText = u.playing ? `${formatTime(u.progress_ms)} <span class="text-gray-600 px-1">/</span> ${formatTime(u.duration_ms)}` : "";
-                            
-                            container.innerHTML += `
-                                <div class="spotify-card p-6 rounded-[28px] flex items-center justify-between shadow-2xl overflow-hidden">
-                                    <div class="flex flex-col flex-1 pr-4 overflow-hidden space-y-4">
-                                        
-                                        <div class="flex items-center space-x-3">
-                                            <img src="${u.img}" class="w-10 h-10 rounded-full border border-white/10 object-cover" />
-                                            <h4 class="font-black text-xl italic uppercase truncate leading-none">${u.name}</h4>
-                                        </div>
+                if(!users) return;
 
-                                        ${u.playing ? `
-                                            <div class="space-y-4">
-                                                <div class="overflow-hidden truncate">
-                                                    <span class="text-[#1DB954] text-lg font-black uppercase whitespace-nowrap">${u.artist_name} - ${u.song_name}</span>
-                                                </div>
-                                                
-                                                <div class="w-full space-y-2">
-                                                    <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                        <div class="progress-bar" style="width: ${progress}%"></div>
-                                                    </div>
-                                                    <p class="text-[12px] text-white font-mono font-bold tracking-widest">${timeText}</p>
-                                                </div>
+                const userList = Object.keys(users).map(id => users[id]).filter(u => Date.now() - u.last_seen < 300000);
+                
+                // İstatistikleri Güncelle
+                document.getElementById('total-online').innerText = `${userList.length} ONLİNE`;
+                document.getElementById('total-playing').innerText = `${userList.filter(u => u.playing).length} LİSTENİNG`;
+
+                Object.keys(users).forEach(uid => {
+                    const u = users[uid];
+                    if(Date.now() - u.last_seen < 300000) {
+                        const progress = u.playing ? (u.progress_ms / u.duration_ms * 100).toFixed(1) : 0;
+                        const timeText = u.playing ? `${formatTime(u.progress_ms)} <span class="text-gray-600 px-1">/</span> ${formatTime(u.duration_ms)}` : "";
+                        
+                        // Aynı şarkıyı dinleyenleri bul (Matching)
+                        const isMatch = u.playing && userList.filter(other => other.name !== u.name && other.playing && other.song_name === u.song_name).length > 0;
+
+                        container.innerHTML += `
+                            <div class="spotify-card p-6 rounded-[28px] flex items-center justify-between shadow-2xl overflow-hidden ${isMatch ? 'match-glow' : ''}" 
+                                 onclick="${u.playing ? `window.open('https://open.spotify.com/track/${u.track_id}', '_blank')` : ''}">
+                                <div class="flex flex-col flex-1 pr-4 overflow-hidden space-y-4">
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${u.img}" class="w-10 h-10 rounded-full border border-white/10 object-cover" />
+                                        <h4 class="font-black text-xl italic uppercase truncate leading-none">${u.name}</h4>
+                                    </div>
+
+                                    ${u.playing ? `
+                                        <div class="space-y-4">
+                                            <div class="overflow-hidden truncate">
+                                                <span class="text-[#1DB954] text-lg font-black uppercase whitespace-nowrap">${u.artist_name} - ${u.song_name}</span>
                                             </div>
-                                        ` : `
-                                            <p class="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">Inactive</p>
-                                        `}
-                                    </div>
-
-                                    <div class="flex-shrink-0">
-                                        <div class="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-cover bg-center shadow-xl border border-white/5" 
-                                             style="background-image: url('${u.playing ? u.album_img : u.img}')">
+                                            
+                                            <div class="w-full space-y-2">
+                                                <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                    <div class="progress-bar" style="width: ${progress}%"></div>
+                                                </div>
+                                                <p class="text-[12px] text-white font-mono font-bold tracking-widest">${timeText}</p>
+                                            </div>
                                         </div>
+                                    ` : `
+                                        <p class="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">Inactive</p>
+                                    `}
+                                </div>
+
+                                <div class="flex-shrink-0">
+                                    <div class="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-cover bg-center shadow-xl border border-white/5 relative group" 
+                                         style="background-image: url('${u.playing ? u.album_img : u.img}')">
+                                         ${u.playing ? `
+                                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                                            <svg class="w-8 h-8 text-[#1DB954]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                                         </div>` : ''}
                                     </div>
-                                </div>`;
-                        }
-                    });
-                }
+                                </div>
+                            </div>`;
+                    }
+                });
             });
         }
     </script>
