@@ -4,7 +4,7 @@ const cors = require('cors');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state playlist-read-private';
+
 const app = express();
 
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
@@ -16,7 +16,7 @@ app.use(express.static(__dirname)).use(cors()).use(cookieParser());
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.get('/login', (req, res) => {
-    // 403 Hatasını Çözen İzinler (Scopes)
+    // Tüm izinler (scope) eksiksiz eklendi
     const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state playlist-read-private';
     res.redirect('https://accounts.spotify.com/authorize?' +
         querystring.stringify({
@@ -46,4 +46,4 @@ app.get('/callback', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8888;
-app.listen(PORT, () => console.log(`🚀 Sunucu ${PORT} portunda aktif.`));
+app.listen(PORT, () => console.log(`🚀 Sunucu port ${PORT} üzerinde aktif.`));
