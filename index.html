@@ -10,7 +10,7 @@
         body { background: #080808; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .spotify-green { color: #1DB954; }
-        .active-dot { width: 14px; height: 14px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 3px solid #080808; z-index: 10; }
+        .active-dot { width: 12px; height: 12px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 2px solid #080808; }
         .hidden { display: none; }
     </style>
 </head>
@@ -18,16 +18,22 @@
     <div class="max-w-6xl mx-auto p-6 pb-32">
         <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
             <h1 class="text-3xl font-black italic tracking-tighter spotify-green">DLRCGN.HUB</h1>
+            <div id="auth-info" class="text-[10px] text-gray-600 font-bold uppercase tracking-widest hidden">Oturum Açıldı ✅</div>
         </header>
 
-        <div id="main-content" class="space-y-16">
+        <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
+            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Bağlan ve <span class="spotify-green">Harekete Geç</span></h2>
+            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg text-lg uppercase">Spotify ile Giriş Yap</a>
+        </div>
+
+        <div id="main-content" class="hidden space-y-16">
             <section>
-                <h3 class="text-sm font-bold mb-6 opacity-40 uppercase tracking-[0.3em] italic text-center md:text-left">Aktif Dinleyiciler</h3>
+                <h3 class="text-sm font-bold mb-6 opacity-40 uppercase tracking-[0.3em] italic">Aktif Dinleyiciler</h3>
                 <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
             </section>
 
             <section class="space-y-10">
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter text-center md:text-left">
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter">
                     <span class="spotify-green text-4xl mr-2">/</span> Kitaplığın
                 </h3>
                 <div id="playlist-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
@@ -36,7 +42,6 @@
     </div>
 
     <script>
-        // --- GÜNCELLENMİŞ AVRUPA VERİTABANI AYARLARI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeGgTl_FUeP7Hg5y5uEb3rPYGXU1SIcdA",
             authDomain: "spotifymatchproject.firebaseapp.com",
@@ -55,13 +60,17 @@
         let currentUserId = "";
 
         if (token) {
-            // 1. Profil Bilgilerini Kaydet
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('auth-info').classList.remove('hidden');
+
+            // 1. Profil Bilgilerini Çek
             fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json()).then(user => {
                 currentUserId = user.id;
                 db.ref('presence/' + user.id).update({
                     name: user.display_name,
-                    img: user.images && user.images[0] ? user.images[0].url : "https://via.placeholder.com/150",
+                    img: user.images[0]?.url || "https://via.placeholder.com/150",
                     last_seen: Date.now(),
                     online: true
                 });
@@ -73,16 +82,16 @@
                 fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
                 .then(res => res.status === 204 ? null : res.json())
                 .then(data => {
-                    const status = (data && data.item) ? `Dinliyor: ${data.item.name}` : "Şu an sessiz...";
+                    const status = data?.item ? `Dinliyor: ${data.item.name}` : "Şu an sessiz...";
                     db.ref('presence/' + currentUserId).update({
                         status: status,
-                        playing: !!(data && data.is_playing),
+                        playing: !!data?.is_playing,
                         last_seen: Date.now()
                     });
                 }).catch(() => {});
             }, 3000);
 
-            // 3. Kartları Ekranda Göster
+            // 3. Dinamik Kartlar
             db.ref('presence').on('value', (snap) => {
                 const users = snap.val();
                 const container = document.getElementById('user-cards');
@@ -92,13 +101,13 @@
                         const u = users[uid];
                         if(Date.now() - u.last_seen < 300000) {
                             container.innerHTML += `
-                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 transition-all">
+                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 shadow-2xl transition-all">
                                     <div class="w-20 h-20 rounded-full bg-cover bg-center relative border border-white/5" style="background-image: url('${u.img}')">
                                         ${u.playing ? '<div class="active-dot"></div>' : ''}
                                     </div>
                                     <div class="flex-1 overflow-hidden">
                                         <h4 class="font-black text-xl italic uppercase truncate tracking-tight">${u.name}</h4>
-                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-400'} truncate italic mt-1">${u.status || 'Bağlı'}</p>
+                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-500'} truncate italic mt-1">${u.status || 'Çevrimiçi'}</p>
                                     </div>
                                 </div>`;
                         }
@@ -112,7 +121,7 @@
                 const plist = document.getElementById('playlist-list');
                 if(data.items) {
                     data.items.forEach(pl => {
-                        const img = pl.images && pl.images[0] ? pl.images[0].url : 'https://via.placeholder.com/300';
+                        const img = pl.images[0]?.url || 'https://via.placeholder.com/300';
                         plist.innerHTML += `
                             <div class="glass p-3 rounded-[25px] group cursor-pointer hover:bg-white/5 transition" onclick="window.open('${pl.external_urls.spotify}', '_blank')">
                                 <img src="${img}" class="w-full aspect-square rounded-[18px] mb-3 object-cover group-hover:scale-95 transition shadow-lg">
