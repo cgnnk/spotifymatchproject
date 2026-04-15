@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         body { background: #080808; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); position: relative; }
         .spotify-green { color: #1DB954; }
         .active-dot { width: 14px; height: 14px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; -right: 2px; -top: 2px; border: 3px solid #080808; z-index: 10; }
         .progress-container { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; }
@@ -30,9 +30,8 @@
 
         <div id="main-content" class="hidden space-y-16">
             <section>
-                <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners<h3>
-                <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    </div>
+                <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners</h3>
+                <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
         </div>
     </div>
@@ -51,6 +50,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        function formatTime(ms) {
+            const mins = Math.floor(ms / 60000);
+            const secs = ((ms % 60000) / 1000).toFixed(0);
+            return mins + ":" + (secs < 10 ? '0' : '') + secs;
+        }
+
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const token = params.get('access_token');
@@ -61,7 +66,6 @@
             document.getElementById('main-content').classList.remove('hidden');
             document.getElementById('auth-info').classList.remove('hidden');
 
-            // 1. Kullanıcı Bilgilerini Al
             fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json()).then(user => {
                 currentUserId = user.id;
@@ -73,7 +77,6 @@
                 });
             });
 
-            // 2. Canlı Şarkı Takibi (3 Saniyede Bir)
             setInterval(() => {
                 if(!currentUserId) return;
                 fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
@@ -96,7 +99,6 @@
                 }).catch(() => {});
             }, 3000);
 
-            // 3. Dinamik Arayüz Güncelleme
             db.ref('presence').on('value', (snap) => {
                 const users = snap.val();
                 const container = document.getElementById('user-cards');
@@ -105,23 +107,28 @@
                 if(users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        if(Date.now() - u.last_seen < 300000) { // 5 dakika aktiflik
+                        if(Date.now() - u.last_seen < 300000) {
                             const progress = u.playing ? (u.progress_ms / u.duration_ms * 100).toFixed(1) : 0;
+                            const timeText = u.playing ? `${formatTime(u.progress_ms)} / ${formatTime(u.duration_ms)}` : "";
                             
                             container.innerHTML += `
-                                <div class="glass p-5 rounded-[28px] flex items-center space-x-4 shadow-2xl border border-white/5 relative overflow-hidden group">
-                                    <div class="w-20 h-20 rounded-2xl bg-cover bg-center relative flex-shrink-0 z-10 transition-transform group-hover:scale-105" 
-                                         style="background-image: url('${u.playing ? u.album_img : u.img}')">
-                                        ${u.playing ? '<div class="active-dot"></div>' : ''}
-                                    </div>
-
-                                    <div class="flex-1 overflow-hidden z-10">
+                                <div class="glass p-5 rounded-[28px] flex items-start space-x-4 shadow-2xl border border-white/5 overflow-hidden">
+                                    <img src="${u.img}" class="w-8 h-8 rounded-full border border-white/10 mt-1 flex-shrink-0" />
+                                    
+                                    <div class="flex-1 overflow-hidden z-10 space-y-3">
                                         <h4 class="font-black text-lg italic uppercase truncate leading-tight">${u.name}</h4>
+                                        
+                                        <div class="w-full aspect-square rounded-xl bg-cover bg-center relative flex-shrink-0" 
+                                             style="background-image: url('${u.playing ? u.album_img : u.img}')">
+                                            ${u.playing ? '<div class="active-dot"></div>' : ''}
+                                        </div>
+
                                         ${u.playing ? `
-                                            <div class="mt-1">
+                                            <div class="mt-2">
                                                 <p class="text-[11px] text-green-500 font-bold uppercase truncate">${u.song_name}</p>
-                                                <p class="text-[10px] text-gray-400 italic truncate mb-2">${u.artist_name}</p>
+                                                <p class="text-[10px] text-gray-400 italic truncate mb-1">${u.artist_name}</p>
                                                 <div class="progress-container"><div class="progress-bar" style="width: ${progress}%"></div></div>
+                                                <p class="text-[9px] text-gray-500 mt-1 text-right font-mono">${timeText}</p>
                                             </div>
                                         ` : `
                                             <p class="text-[10px] text-gray-600 italic uppercase mt-1">Inactive</p>
