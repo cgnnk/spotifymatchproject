@@ -7,7 +7,6 @@ const path = require('path');
 
 const app = express();
 
-// --- AYARLAR (Dashboard ile Birebir Aynı Olmalı) ---
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
 const client_secret = '1f55450ee0d24cbf93e137de52f6bfb8';
 const redirect_uri = 'https://spotifymatchproject.onrender.com/callback';
@@ -17,8 +16,8 @@ app.use(express.static(__dirname)).use(cors()).use(cookieParser());
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.get('/login', (req, res) => {
-    // KAPSAM: Profil, Top Tracks, Şu an çalan ve streaming izinleri
-    const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state streaming user-modify-playback-state';
+    // 403 Hatasını Çözen İzinler (Scopes)
+    const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state playlist-read-private';
     res.redirect('https://accounts.spotify.com/authorize?' +
         querystring.stringify({
             response_type: 'code',
@@ -47,4 +46,4 @@ app.get('/callback', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8888;
-app.listen(PORT, () => console.log(`🚀 Sunucu port ${PORT} üzerinde aktif.`));
+app.listen(PORT, () => console.log(`🚀 Sunucu ${PORT} portunda aktif.`));
