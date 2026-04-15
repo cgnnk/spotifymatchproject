@@ -82,7 +82,7 @@
                 fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
                 .then(res => res.status === 204 ? null : res.json())
                 .then(data => {
-                    const status = data?.item ? `Dinliyor: ${data.item.name}` : "Şu an sessiz...";
+                    const status = data?.item ? `Dinliyor: ${data.item.name}` : "Inactive";
                     db.ref('presence/' + currentUserId).update({
                         status: status,
                         playing: !!data?.is_playing,
