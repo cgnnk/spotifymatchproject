@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const request = require('request');
 const cors = require('cors');
 const querystring = require('querystring');
@@ -7,17 +7,18 @@ const path = require('path');
 
 const app = express();
 
-// --- AYARLAR ---
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
 const client_secret = '1f55450ee0d24cbf93e137de52f6bfb8';
+// RENDER'A GEÇTİĞİNDE BURAYI RENDER LİNKİNLE DEĞİŞTİRMEYİ UNUTMA
 const redirect_uri = 'http://127.0.0.1:8888/callback';
 
-// Middleware
-app.use(express.static(path.join(__dirname, 'public')))
-    .use(cors())
-    .use(cookieParser());
+app.use(cors()).use(cookieParser());
 
-// Giriş Yönlendirmesi
+// Ana sayfaya gelindiğinde direkt ana dizindeki index.html'i gönder
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.get('/login', (req, res) => {
     const scope = 'user-read-private user-read-email user-top-read';
     res.redirect('https://accounts.spotify.com/authorize?' +
@@ -29,7 +30,6 @@ app.get('/login', (req, res) => {
         }));
 });
 
-// Spotify'dan Geri Dönüş (Callback)
 app.get('/callback', (req, res) => {
     const code = req.query.code || null;
     const authOptions = {
@@ -48,7 +48,6 @@ app.get('/callback', (req, res) => {
     request.post(authOptions, (error, response, body) => {
         if (!error && response.statusCode === 200) {
             const access_token = body.access_token;
-            // Token ile ana sayfaya yönlendir
             res.redirect('/#access_token=' + access_token);
         } else {
             res.redirect('/#error=invalid_token');
@@ -56,8 +55,7 @@ app.get('/callback', (req, res) => {
     });
 });
 
-const PORT = 8888;
+const PORT = process.env.PORT || 8888;
 app.listen(PORT, () => {
-    console.log(`🚀 Sunucu hazır!`);
-    console.log(`👉 Tarayıcıdan aç: http://127.0.0.1:${PORT}`);
+    console.log(`🚀 Sunucu ${PORT} portunda hazır!`);
 });
