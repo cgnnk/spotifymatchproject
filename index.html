@@ -10,29 +10,24 @@
         body { background: #080808; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .spotify-green { color: #1DB954; }
-        .active-dot { width: 12px; height: 12px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 2px solid #080808; }
+        .active-dot { width: 14px; height: 14px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 3px solid #080808; z-index: 10; }
     </style>
 </head>
 <body>
     <div class="max-w-6xl mx-auto p-6 pb-32">
-        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
-            <h1 class="text-3xl font-black italic tracking-tighter spotify-green">DLRCGN.HUB</h1>
+        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900 text-center md:text-left">
+            <h1 class="text-3xl font-black italic tracking-tighter spotify-green mx-auto md:mx-0">DLRCGN.HUB</h1>
         </header>
 
-        <div id="login-screen" class="flex flex-col items-center justify-center py-32 text-center">
-            <h2 class="text-5xl font-black mb-8 italic uppercase">Müzik Paylaştıkça <span class="spotify-green">Güzel</span></h2>
-            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-16 rounded-full hover:scale-105 transition shadow-lg text-lg">GİRİŞ YAP</a>
-        </div>
-
-        <div id="main-content" class="hidden space-y-16">
+        <div id="main-content" class="space-y-16">
             <section>
-                <h3 class="text-xl font-bold mb-6 opacity-50 uppercase tracking-widest italic">Çevrimiçi Dinleyiciler</h3>
+                <h3 class="text-xl font-bold mb-6 opacity-50 uppercase tracking-widest italic text-center md:text-left">Çevrimiçi Dinleyiciler</h3>
                 <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     </div>
             </section>
 
             <section class="space-y-10">
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter">
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter text-center md:text-left">
                     <span class="spotify-green text-4xl mr-2">/</span> Çalma Listelerin
                 </h3>
                 <div id="playlist-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -42,6 +37,7 @@
     </div>
 
     <script>
+        // --- FIREBASE KONFİGÜRASYONU ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeGgTl_FUeP7Hg5y5uEb3rPYGXU1SIcdA",
             authDomain: "spotifymatchproject.firebaseapp.com",
@@ -54,39 +50,51 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // URL'den Token Çekme
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const token = params.get('access_token');
         let currentUserId = "";
 
         if (token) {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-
-            // 1. Profil Bilgisi Al ve Kaydet
-            fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(res => res.json()).then(user => {
+            // 1. Profil Bilgilerini Al ve Firebase'e Kaydet
+            fetch('https://api.spotify.com/v1/me', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            })
+            .then(res => res.json())
+            .then(user => {
                 currentUserId = user.id;
-                db.ref('presence/' + user.id).update({
+                
+                db.ref('presence/' + user.id).set({
                     name: user.display_name,
                     img: user.images && user.images[0] ? user.images[0].url : "https://via.placeholder.com/150",
                     online: true,
-                    last_seen: Date.now()
+                    last_seen: Date.now(),
+                    status: "Bağlandı ✅"
                 });
-            });
+            })
+            .catch(err => console.error("Profil hatası:", err));
 
-            // 2. Şu An Ne Dinliyor? (Periyodik Güncelleme)
+            // 2. Canlı Şarkı Takibi (Her 3 Saniyede Bir)
             setInterval(() => {
-                fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
-                .then(res => res.json())
+                fetch('https://api.spotify.com/v1/me/player/currently-playing', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                })
+                .then(res => {
+                    if (res.status === 204) return null; // Şarkı çalmıyor
+                    return res.json();
+                })
                 .then(data => {
-                    const status = data.item ? `Dinliyor: ${data.item.name} - ${data.item.artists[0].name}` : "Şu an sessiz...";
+                    const statusText = (data && data.item) ? `Dinliyor: ${data.item.name} - ${data.item.artists[0].name}` : "Şu an sessiz...";
+                    const isPlaying = (data && data.is_playing) ? true : false;
+
                     db.ref('presence/' + currentUserId).update({
-                        status: status,
-                        playing: data.is_playing || false,
+                        status: statusText,
+                        playing: isPlaying,
                         last_seen: Date.now()
                     });
-                }).catch(e => console.log("Çalma bilgisi alınamadı"));
+                })
+                .catch(err => console.log("Çalma bilgisi güncellenemedi."));
             }, 3000);
 
             // 3. Kartları Ekrana Bas (Real-time)
@@ -98,17 +106,17 @@
                 if (users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        // Sadece son 2 dakika içinde aktif olanları göster
-                        if (u.online && (Date.now() - u.last_seen < 120000)) {
+                        // Sadece son 5 dakika içinde aktif olanları göster
+                        if (u.online && (Date.now() - u.last_seen < 300000)) {
                             container.innerHTML += `
                                 <div class="glass p-6 rounded-[35px] flex items-center space-x-5 transition-all">
-                                    <div class="w-20 h-20 rounded-full bg-cover bg-center relative shadow-2xl" style="background-image: url('${u.img}')">
+                                    <div class="w-20 h-20 rounded-full bg-cover bg-center relative shadow-2xl border border-white/10" style="background-image: url('${u.img}')">
                                         ${u.playing ? '<div class="active-dot"></div>' : ''}
                                     </div>
                                     <div class="flex-1 overflow-hidden">
                                         <h4 class="font-black text-xl italic uppercase truncate">${u.name}</h4>
-                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-500'} truncate italic">
-                                            ${u.status || 'Bağlı'}
+                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-400'} truncate italic">
+                                            ${u.status}
                                         </p>
                                     </div>
                                 </div>`;
@@ -118,15 +126,19 @@
             });
 
             // 4. Çalma Listelerini Çek
-            fetch('https://api.spotify.com/v1/me/top/tracks3', { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(res => res.json()).then(data => {
+            fetch('https://api.spotify.com/v1/me/playlists?limit=10', { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            })
+            .then(res => res.json())
+            .then(data => {
                 const plist = document.getElementById('playlist-list');
+                plist.innerHTML = "";
                 if (data.items) {
-                    data.items.slice(0, 10).forEach(pl => {
+                    data.items.forEach(pl => {
                         const img = pl.images && pl.images[0] ? pl.images[0].url : 'https://via.placeholder.com/300';
                         plist.innerHTML += `
                             <div class="glass p-3 rounded-[30px] group cursor-pointer hover:bg-white/5 transition" onclick="window.open('${pl.external_urls.spotify}', '_blank')">
-                                <img src="${img}" class="w-full aspect-square rounded-[22px] mb-3 object-cover group-hover:scale-95 transition">
+                                <img src="${img}" class="w-full aspect-square rounded-[22px] mb-3 object-cover group-hover:scale-95 transition shadow-lg">
                                 <p class="text-[10px] font-black uppercase text-center truncate px-2">${pl.name}</p>
                             </div>`;
                     });
