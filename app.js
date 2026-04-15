@@ -72,36 +72,44 @@ const App = () => {
                 ) : <span className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Logged</span>}
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h3 className="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.keys(users).map(uid => {
                     const u = users[uid];
                     if (Date.now() - u.last_seen > 300000) return null;
                     const prog = u.playing ? (u.progress_ms / u.duration_ms * 100) : 0;
 
                     return (
-                        <div key={uid} className="bg-white/5 p-6 rounded-[32px] flex items-start space-x-4 border border-white/10 shadow-xl relative overflow-hidden">
-                            {/* Profil Avatar (Küçük Daire) */}
-                            <img src={u.img} className="w-8 h-8 rounded-full border border-white/10 mt-1 flex-shrink-0" />
+                        <div key={uid} className="bg-white/5 p-4 rounded-[24px] flex items-start space-x-4 border border-white/10 shadow-lg relative overflow-hidden transition-all hover:bg-white/10">
+                            {/* Avatar Büyütüldü */}
+                            <img src={u.img} alt={u.name} className="w-14 h-14 rounded-full border-2 border-green-500/30 flex-shrink-0 object-cover shadow-inner" />
                             
-                            <div className="flex-1 overflow-hidden space-y-3">
-                                <h3 className="font-bold text-xl truncate leading-tight">{u.name}</h3>
+                            <div className="flex-1 overflow-hidden">
+                                <h3 className="font-bold text-lg truncate leading-tight mb-3 mt-1">{u.name}</h3>
                                 
-                                {/* Ana Görsel (PP veya Kapak) */}
-                                <div className="w-full aspect-square rounded-2xl bg-cover bg-center relative flex-shrink-0 shadow-lg" 
+                                {/* Ana Görsel (Album Art) - Boyutu Küçültüldü */}
+                                <div className="w-full aspect-square max-w-[180px] rounded-xl bg-cover bg-center relative shadow-md mb-3" 
                                      style={{ backgroundImage: `url(${u.playing ? u.album_img : u.img})` }}>
-                                    {u.playing && <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-4 border-[#080808] animate-pulse" />}
+                                    {u.playing && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#080808] animate-pulse" />}
                                 </div>
 
                                 {u.playing ? (
-                                    <div className="mt-2">
+                                    <div className="space-y-1">
                                         <p className="text-green-400 text-xs font-bold truncate uppercase">{u.song_name}</p>
                                         <p className="text-gray-400 text-[10px] italic truncate">{u.artist_name}</p>
+                                        
                                         <div className="w-full h-1 bg-white/10 rounded-full mt-3 overflow-hidden">
                                             <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${prog}%` }} />
                                         </div>
-                                        <div className="text-[9px] text-gray-500 text-right mt-1 font-mono">{formatTime(u.progress_ms)} / {formatTime(u.duration_ms)}</div>
+                                        {/* Süre Metni Beyazlaştırıldı */}
+                                        <div className="text-[10px] text-white/90 font-medium text-right mt-1 font-mono">
+                                            {formatTime(u.progress_ms)} <span className="text-gray-500">/</span> {formatTime(u.duration_ms)}
+                                        </div>
                                     </div>
-                                ) : <p className="text-gray-500 text-xs mt-1 italic">Inactive</p>}
+                                ) : (
+                                    <p className="text-gray-500 text-[10px] mt-1 italic uppercase tracking-wider">Inactive</p>
+                                )}
                             </div>
                         </div>
                     );
