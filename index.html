@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>SpotifyOnline | Live Feed</title>
+    <title>SpotifyOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -20,17 +20,17 @@
     <div class="max-w-6xl mx-auto p-6 pb-32">
         <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
             <h1 class="text-3xl font-black italic tracking-tighter spotify-green">SpotifyOnline</h1>
-            <div id="auth-info" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest hidden">Oturum Açıldı</div>
+            <div id="auth-info" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest hidden">Logged</div>
         </header>
 
         <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
-            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Müziğini <span class="spotify-green">Paylaş</span></h2>
-            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg text-lg uppercase">Spotify ile Bağlan</a>
+            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Connect With<span class="spotify-green">Spotify</span></h2>
+            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg text-lg uppercase">Connect With Spotify</a>
         </div>
 
         <div id="main-content" class="hidden space-y-16">
             <section>
-                <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Şu An Ne Dinliyorlar?</h3>
+                <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners<h3>
                 <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     </div>
             </section>
@@ -124,7 +124,7 @@
                                                 <div class="progress-container"><div class="progress-bar" style="width: ${progress}%"></div></div>
                                             </div>
                                         ` : `
-                                            <p class="text-[10px] text-gray-600 italic uppercase mt-1">Sessiz Mod</p>
+                                            <p class="text-[10px] text-gray-600 italic uppercase mt-1">Inactive</p>
                                         `}
                                     </div>
                                 </div>`;
