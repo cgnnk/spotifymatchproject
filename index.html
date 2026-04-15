@@ -2,41 +2,45 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>SpotifyOnline</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpotifyOnline - Listeners</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background: #080808; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .spotify-card { background: #121212; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
-        .spotify-card:hover { background: #181818; border-color: rgba(255, 255, 255, 0.15); }
-        .spotify-green { color: #1DB954; }
-        .progress-bar { height: 100%; background: #1DB954; transition: width 1s linear; }
-        .hidden { display: none; }
+        body { background: #080808; color: white; font-family: 'Inter', sans-serif; }
+        .spotify-card { background: #121212; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05); }
+        .spotify-card:hover { border-color: rgba(255,255,255,0.2); background: #181818; }
+        .progress-bar { transition: width 1s linear; }
     </style>
 </head>
-<body>
-    <div class="max-w-6xl mx-auto p-6 pb-32">
-        <header class="flex justify-between items-center py-8 mb-10 border-b border-gray-900">
-            <h1 class="text-3xl font-black italic tracking-tighter spotify-green uppercase">SpotifyOnline</h1>
-            <div id="auth-info" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest hidden">Logged</div>
+<body class="p-6 md:p-12">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12 border-b border-white/5 pb-6">
+            <h1 class="text-4xl font-black italic text-[#1DB954] tracking-tighter uppercase leading-none">SpotifyOnline</h1>
+            <div id="auth-status" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                Checking connection...
+            </div>
         </header>
 
-        <div id="login-screen" class="flex flex-col items-center justify-center py-20 text-center">
-            <h2 class="text-5xl font-black mb-8 italic uppercase tracking-tighter">Connect Wıth <span class="spotify-green">Spotıfy</span></h2>
-            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-12 rounded-full hover:scale-105 transition shadow-lg text-lg uppercase">Connect Wıth Spotıfy</a>
+        <div id="login-screen" class="hidden flex flex-col items-center py-20">
+            <h2 class="text-4xl font-black mb-8 italic uppercase text-center">Connect With <span class="text-[#1DB954]">Spotify</span></h2>
+            <a href="/login" class="bg-[#1DB954] text-black font-black py-4 px-10 rounded-full hover:scale-105 transition shadow-lg uppercase text-sm">
+                Login with Spotify
+            </a>
         </div>
 
-        <div id="main-content" class="hidden space-y-12">
-            <section>
-                <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners</h3>
-                <div id="user-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
-            </section>
+        <div id="main-content">
+            <h3 class="text-xs font-bold mb-8 opacity-40 uppercase tracking-[0.4em] italic">Listeners</h3>
+            <div id="user-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                </div>
         </div>
     </div>
 
     <script>
+        // --- FIREBASE AYARLARI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeGgTl_FUeP7Hg5y5uEb3rPYGXU1SIcdA",
             authDomain: "spotifymatchproject.firebaseapp.com",
@@ -46,7 +50,7 @@
             messagingSenderId: "525504631473",
             appId: "1:525504631473:web:6c6e2d56e531f966a58890"
         };
-        
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -59,90 +63,100 @@
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const token = params.get('access_token');
-        let currentUserId = "";
 
-        if (token) {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            document.getElementById('auth-info').classList.remove('hidden');
+        if (!token) {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('auth-status').innerText = "Not Logged In";
+        } else {
+            document.getElementById('auth-status').innerText = "Logged";
+            startSystem(token);
+        }
 
-            fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(res => res.json()).then(user => {
+        async function startSystem(t) {
+            let currentUserId = "";
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${t}` } });
+                const user = await res.json();
                 currentUserId = user.id;
-                db.ref('presence/' + user.id).update({
-                    name: user.display_name,
-                    img: user.images[0]?.url || "https://via.placeholder.com/150",
-                    online: true,
-                    last_seen: Date.now()
-                });
-            });
 
-            setInterval(() => {
-                if(!currentUserId) return;
-                fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
-                .then(res => res.status === 204 ? null : res.json())
-                .then(data => {
-                    if (data && data.item) {
-                        const track = data.item;
-                        db.ref('presence/' + currentUserId).update({
-                            playing: data.is_playing,
-                            song_name: track.name,
-                            artist_name: track.artists.map(a => a.name).join(', '),
-                            album_img: track.album.images[0]?.url,
-                            duration_ms: track.duration_ms,
-                            progress_ms: data.progress_ms,
-                            last_seen: Date.now()
+                setInterval(async () => {
+                    const sRes = await fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${t}` } });
+                    
+                    let updateData = {
+                        name: user.display_name,
+                        img: user.images[0]?.url || "https://via.placeholder.com/150",
+                        last_seen: Date.now(),
+                        online: true
+                    };
+
+                    if (sRes.status === 200) {
+                        const s = await sRes.json();
+                        Object.assign(updateData, {
+                            playing: s.is_playing,
+                            song_name: s.item.name,
+                            artist_name: s.item.artists.map(a => a.name).join(', '),
+                            album_img: s.item.album.images[0]?.url,
+                            duration_ms: s.item.duration_ms,
+                            progress_ms: s.progress_ms
                         });
                     } else {
-                        db.ref('presence/' + currentUserId).update({ playing: false, last_seen: Date.now() });
+                        updateData.playing = false;
                     }
-                }).catch(() => {});
-            }, 3000);
+                    db.ref('presence/' + currentUserId).update(updateData);
+                }, 3000);
+
+            } catch (e) { console.error("Auth error:", e); }
 
             db.ref('presence').on('value', (snap) => {
                 const users = snap.val();
                 const container = document.getElementById('user-cards');
                 container.innerHTML = "";
-                
-                if(users) {
+
+                if (users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        if(Date.now() - u.last_seen < 300000) {
-                            const progress = u.playing ? (u.progress_ms / u.duration_ms * 100).toFixed(1) : 0;
-                            const timeText = u.playing ? `${formatTime(u.progress_ms)} <span class="text-gray-600">/</span> ${formatTime(u.duration_ms)}` : "";
-                            
-                            container.innerHTML += `
-                                <div class="spotify-card p-5 rounded-[24px] flex items-center justify-between shadow-2xl overflow-hidden">
-                                    <div class="flex flex-col flex-1 pr-6 overflow-hidden space-y-4">
-                                        <div class="flex flex-col space-y-1">
-                                            <img src="${u.img}" class="w-12 h-12 rounded-full border border-white/10 object-cover" />
-                                            <h4 class="font-black text-xl italic uppercase truncate leading-tight mt-1">${u.name}</h4>
-                                        </div>
+                        if (Date.now() - u.last_seen > 300000) return;
 
-                                        ${u.playing ? `
-                                            <div class="space-y-3">
-                                                <div class="flex flex-col">
-                                                    <p class="text-[14px] text-green-500 font-black uppercase truncate">${u.song_name}</p>
-                                                    <p class="text-[12px] text-gray-400 italic truncate">${u.artist_name}</p>
-                                                </div>
-                                                <div class="w-full space-y-1">
-                                                    <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                        <div class="progress-bar" style="width: ${progress}%"></div>
-                                                    </div>
-                                                    <p class="text-[11px] text-white mt-1 font-mono font-bold">${timeText}</p>
-                                                </div>
+                        const prog = u.playing ? (u.progress_ms / u.duration_ms * 100) : 0;
+                        const cardHtml = `
+                            <div class="spotify-card p-6 rounded-[28px] flex items-center justify-between shadow-2xl overflow-hidden">
+                                <div class="flex flex-col flex-1 pr-6 overflow-hidden space-y-5">
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${u.img}" class="w-10 h-10 rounded-full border border-white/10 object-cover" />
+                                        <h4 class="font-black text-xl italic uppercase truncate leading-none">${u.name}</h4>
+                                    </div>
+
+                                    ${u.playing ? `
+                                        <div class="space-y-4">
+                                            <div class="flex items-baseline overflow-hidden truncate">
+                                                <span class="text-[#1DB954] text-lg font-black uppercase mr-2 truncate">${u.song_name}</span>
+                                                <span class="text-gray-400 text-sm italic opacity-80 whitespace-nowrap">${u.artist_name}</span>
                                             </div>
-                                        ` : `
-                                            <p class="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic mt-1">Inactive</p>
-                                        `}
-                                    </div>
-                                    <div class="flex-shrink-0">
-                                        <div class="w-32 h-32 md:w-36 md:h-36 rounded-2xl bg-cover bg-center shadow-xl border border-white/5" 
-                                             style="background-image: url('${u.playing ? u.album_img : u.img}')">
+                                            
+                                            <div class="w-full space-y-2">
+                                                <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                    <div class="progress-bar h-full bg-[#1DB954]" style="width: ${prog}%"></div>
+                                                </div>
+                                                <p class="text-[12px] text-white font-mono font-bold tracking-widest">
+                                                    ${formatTime(u.progress_ms)} <span class="text-gray-600 px-1">/</span> ${formatTime(u.duration_ms)}
+                                                </p>
+                                            </div>
                                         </div>
+                                    ` : `
+                                        <p class="text-gray-600 text-[10px] font-bold uppercase tracking-widest italic">Inactive</p>
+                                    `}
+                                </div>
+
+                                <div class="flex-shrink-0">
+                                    <div class="w-32 h-32 md:w-36 md:h-36 rounded-2xl bg-cover bg-center shadow-xl border border-white/5" 
+                                         style="background-image: url('${u.playing ? u.album_img : u.img}')">
                                     </div>
-                                </div>`;
-                        }
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += cardHtml;
                     });
                 }
             });
