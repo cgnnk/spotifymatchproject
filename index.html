@@ -11,6 +11,7 @@
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .spotify-green { color: #1DB954; }
         .active-dot { width: 14px; height: 14px; background: #1DB954; border-radius: 50%; box-shadow: 0 0 15px #1DB954; position: absolute; top: 0; right: 0; border: 3px solid #080808; z-index: 10; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -22,8 +23,7 @@
         <div id="main-content" class="space-y-16">
             <section>
                 <h3 class="text-sm font-bold mb-6 opacity-40 uppercase tracking-[0.3em] italic text-center md:text-left">Aktif Dinleyiciler</h3>
-                <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    </div>
+                <div id="user-cards" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
             </section>
 
             <section class="space-y-10">
@@ -36,11 +36,11 @@
     </div>
 
     <script>
-        // --- KRİTİK GÜNCELLEME: YENİ DATABASE URL ---
+        // --- GÜNCELLENMİŞ AVRUPA VERİTABANI AYARLARI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeGgTl_FUeP7Hg5y5uEb3rPYGXU1SIcdA",
             authDomain: "spotifymatchproject.firebaseapp.com",
-            databaseURL: "https://spotifymatchproject-default-rtdb.europe-west1.firebasedatabase.app", // HATA BURADAYDI, DÜZELTİLDİ
+            databaseURL: "https://spotifymatchproject-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "spotifymatchproject",
             storageBucket: "spotifymatchproject.firebasestorage.app",
             messagingSenderId: "525504631473",
@@ -55,8 +55,7 @@
         let currentUserId = "";
 
         if (token) {
-            document.getElementById('main-content').classList.remove('hidden');
-
+            // 1. Profil Bilgilerini Kaydet
             fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json()).then(user => {
                 currentUserId = user.id;
@@ -64,11 +63,11 @@
                     name: user.display_name,
                     img: user.images && user.images[0] ? user.images[0].url : "https://via.placeholder.com/150",
                     last_seen: Date.now(),
-                    online: true,
-                    status: "Bağlandı ✅"
+                    online: true
                 });
             });
 
+            // 2. Canlı Şarkı Takibi
             setInterval(() => {
                 if(!currentUserId) return;
                 fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers: { 'Authorization': `Bearer ${token}` } })
@@ -83,6 +82,7 @@
                 }).catch(() => {});
             }, 3000);
 
+            // 3. Kartları Ekranda Göster
             db.ref('presence').on('value', (snap) => {
                 const users = snap.val();
                 const container = document.getElementById('user-cards');
@@ -90,15 +90,15 @@
                 if(users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        if(Date.now() - u.last_seen < 600000) {
+                        if(Date.now() - u.last_seen < 300000) {
                             container.innerHTML += `
-                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 shadow-2xl">
+                                <div class="glass p-6 rounded-[35px] flex items-center space-x-5 transition-all">
                                     <div class="w-20 h-20 rounded-full bg-cover bg-center relative border border-white/5" style="background-image: url('${u.img}')">
                                         ${u.playing ? '<div class="active-dot"></div>' : ''}
                                     </div>
                                     <div class="flex-1 overflow-hidden">
                                         <h4 class="font-black text-xl italic uppercase truncate tracking-tight">${u.name}</h4>
-                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-400'} truncate italic mt-1">${u.status}</p>
+                                        <p class="text-sm ${u.playing ? 'text-green-500 font-bold' : 'text-gray-400'} truncate italic mt-1">${u.status || 'Bağlı'}</p>
                                     </div>
                                 </div>`;
                         }
@@ -106,6 +106,7 @@
                 }
             });
 
+            // 4. Kitaplık
             fetch('https://api.spotify.com/v1/me/playlists', { headers: { 'Authorization': `Bearer ${token}` } })
             .then(res => res.json()).then(data => {
                 const plist = document.getElementById('playlist-list');
