@@ -4,7 +4,7 @@ const cors = require('cors');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-
+const scope = 'user-read-private user-read-email user-top-read user-read-currently-playing user-read-playback-state playlist-read-private';
 const app = express();
 
 const client_id = '69c0b423ad674d8a875396a42c0cc97e';
