@@ -65,10 +65,10 @@ const App = () => {
     return (
         <div className="min-h-screen bg-black text-white p-6 font-sans">
             <header className="flex justify-between items-center mb-10 border-b border-gray-800 pb-5">
-                <h1 className="text-3xl font-black italic text-green-500">Spotify</h1>
+                <h1 className="text-3xl font-black italic text-green-500">SpotifyOnline</h1>
                 {!token ? (
                     // BURASI ÖNEMLİ: localhost yerine Render linkini koymalısın
-                    <a href="https://spotifymatchproject.onrender.com/login" className="bg-green-500 px-6 py-2 rounded-full font-bold text-black">Spotify ile Bağlan</a>
+                    <a href="https://spotifymatchproject.onrender.com/login" className="bg-green-500 px-6 py-2 rounded-full font-bold text-black">Login With Spotify</a>
                 ) : (
                     <span className="text-green-400 font-bold uppercase tracking-widest text-xs">Oturum Açıldı</span>
                 )}
