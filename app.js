@@ -112,7 +112,7 @@ const App = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 text-xs mt-1 italic">Şu an sessiz...</p>
+                                    <p className="text-gray-500 text-xs mt-1 italic">Inactive</p>
                                 )}
                             </div>
                         </div>
